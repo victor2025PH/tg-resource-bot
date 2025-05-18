@@ -13,6 +13,8 @@ import json
 import base64
 import gspread
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiohttp import web
 
 # ================== 核心配置 ==================
 TELEGRAM_TOKEN = os.getenv("BOT_TOKEN")
@@ -22,6 +24,10 @@ GROUP_LINK = os.getenv("GROUP_LINK", "https://t.me/+abc")
 VIP_GROUP_LINK = os.getenv("VIP_GROUP_LINK", GROUP_LINK)
 GOOGLE_SHEET_NAME = os.getenv("GSHEET_NAME", "resources-data")
 key_base64 = os.getenv("GSHEET_KEY_BASE64")
+
+WEBHOOK_PATH = "/webhook"
+WEBHOOK_SECRET = "secret-token"
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://your-bot-url.onrender.com") + WEBHOOK_PATH
 
 # ============ 初始化对象 ============
 bot = Bot(token=TELEGRAM_TOKEN)
@@ -137,13 +143,11 @@ async def handle(message: types.Message):
         await message.reply("我是资源撮合客服助手，欢迎提问。")
         return
 
-    # 智能应答库优先
     ans = smart_match_qas(text)
     if ans:
         await message.reply(ans)
         return
 
-    # AI兜底
     msgs = user_history.get(uid, [])
     msgs.append({"role": "user", "content": text})
     if len(msgs) > 10:
@@ -162,18 +166,6 @@ async def handle(message: types.Message):
     await message.reply(reply)
     save_log(uid, text, reply, classify_persona(text))
 
-# ============ 启动 ============
-async def main():
-    # ===== Webhook 启动方式（用于 Render 云部署）=====
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
-
-# Webhook 配置（请确保这两个变量在环境变量中设好）
-WEBHOOK_PATH = "/webhook"
-WEBHOOK_SECRET = "secret-token"
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://yourproject.onrender.com") + WEBHOOK_PATH
-
-# Webhook 启动时调用
 # ============ Webhook 启动入口 ============
 async def on_startup(dispatcher: Dispatcher):
     await bot.set_webhook(url=WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
@@ -191,7 +183,3 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     app = create_app()
     web.run_app(app, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
