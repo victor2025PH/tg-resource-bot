@@ -1,4 +1,3 @@
-# ✅ Webhook + 智能应答 + Google Sheets + YAML应答 + 关键词标准化版本
 
 import asyncio
 from aiogram import Bot, Dispatcher, types
@@ -71,8 +70,6 @@ def classify_tag(text):
     return "其它"
 
 # ============ YAML 应答 ============
-
-
 def log_unmatched_keywords(text):
     fname = 'unmatched_keywords.json'
     try:
@@ -85,10 +82,11 @@ def log_unmatched_keywords(text):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def smart_match_qas(text):
+    text = text.lower()
     for qa in qas:
         for sub in qa.get('subcategories', []):
-            for k in sub['keywords']:
-                if k.lower() in text.lower():
+            for k in sub.get('keywords', []):
+                if k.lower() in text:
                     reply = sub['reply']
                     return random.choice(reply) if isinstance(reply, list) else reply
     log_unmatched_keywords(text)
