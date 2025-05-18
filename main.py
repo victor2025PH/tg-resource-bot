@@ -36,7 +36,7 @@ logging.basicConfig(level=logging.INFO)
 user_history = {}
 
 # ============ 加载 YAML 问答 ============
-with open('qas.yaml', encoding='utf8') as f:
+with open('qas_multi_lang.yaml', encoding='utf8') as f:
     qas = yaml.safe_load(f)
 
 # ============ Google Sheet 授权 ============
@@ -71,6 +71,8 @@ def classify_tag(text):
     return "其它"
 
 # ============ YAML 应答 ============
+
+
 def log_unmatched_keywords(text):
     fname = 'unmatched_keywords.json'
     try:
