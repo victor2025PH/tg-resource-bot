@@ -2,6 +2,7 @@ import os
 import logging
 import openai
 import gspread
+import base64
 from datetime import datetime
 from flask import Flask, request
 from aiogram import Bot, Dispatcher, types
@@ -21,6 +22,11 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your-openai-key")
 openai.api_key = OPENAI_API_KEY
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
+
+# 解码密钥并写入文件
+key_base64 = os.getenv("GSHEET_KEY_BASE64")
+with open("service_account.json", "wb") as f:
+    f.write(base64.b64decode(key_base64))
 
 # Google Sheets 设置
 gc = gspread.service_account(filename="service_account.json")
