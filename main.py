@@ -1,30 +1,41 @@
-import os
-import logging
-import openai
-import gspread
-import base64
-from datetime import datetime
-from flask import Flask, request
+# ✅ 合并后的 Telegram AI Bot + 多层引流 + YAML知识库 + Google Sheets 打标签追踪
+
+import asyncio
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
+import openai
+import logging
+import yaml
+import csv
+import datetime
+import os
+import random
+import json
+import base64
+import gspread
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-# ===== 基础配置 =====
-BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://yourdomain.com")
-WEBHOOK_PATH = "/webhook"
-WEBHOOK_SECRET = "secret-token"
+# ================== 核心配置 ==================
+TELEGRAM_TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "123456"))
+GROUP_LINK = os.getenv("GROUP_LINK", "https://t.me/+abc")
+VIP_GROUP_LINK = os.getenv("VIP_GROUP_LINK", GROUP_LINK)
 GOOGLE_SHEET_NAME = os.getenv("GSHEET_NAME", "resources-data")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your-openai-key")
-
-openai.api_key = OPENAI_API_KEY
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(storage=MemoryStorage())
-
-# ===== Google Sheets 授权配置 =====
 key_base64 = os.getenv("GSHEET_KEY_BASE64")
+
+# ============ 初始化对象 ============
+bot = Bot(token=TELEGRAM_TOKEN)
+dp = Dispatcher()
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
+logging.basicConfig(level=logging.INFO)
+user_history = {}
+welcomed_users = set()
+
+# ============ 加载行业应答库 ============
+with open('qas.yaml', encoding='utf8') as f:
+    qas = yaml.safe_load(f)
+
+# ============ 处理 base64 的 service_account.json ============
 with open("service_account.json", "wb") as f:
     f.write(base64.b64decode(key_base64))
 
@@ -33,58 +44,127 @@ sheet_resources = gc.open(GOOGLE_SHEET_NAME).worksheet("resources")
 sheet_reports = gc.open(GOOGLE_SHEET_NAME).worksheet("reports")
 sheet_interactions = gc.open(GOOGLE_SHEET_NAME).worksheet("interactions")
 
-# ===== ChatGPT 调用 =====
-async def ask_gpt(prompt: str):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message["content"]
-    except Exception as e:
-        logging.error(f"[GPT错误] {e}")
-        return "抱歉，我暂时无法回答你的问题。"
+# ============ 标签识别 ============
+def classify_persona(text):
+    text = text.lower()
+    if any(word in text for word in ['老板', '担保', '收单', '大额']):
+        return "大客户"
+    elif any(word in text for word in ['推广', '广告', '引流', '运营']):
+        return "推广号"
+    elif any(word in text for word in ['招聘', '工人', '司机', '人事']):
+        return "资源中介"
+    return "普通用户"
 
-# ===== 处理用户消息 =====
+def classify_tag(text):
+    tags = {
+        "担保": ["担保", "押金", "中介", "信用"],
+        "换汇": ["换汇", "汇率", "转账", "USDT", "币"],
+        "收款": ["收款", "码", "通道", "微信", "支付宝"]
+    }
+    for tag, keywords in tags.items():
+        if any(k in text for k in keywords):
+            return tag
+    return "其它"
+
+# ============ 智能匹配问答 ============
+def log_unmatched_keywords(text):
+    fname = 'unmatched_keywords.json'
+    try:
+        with open(fname, 'r', encoding='utf8') as f:
+            data = json.load(f)
+    except:
+        data = {}
+    data[text] = data.get(text, 0) + 1
+    with open(fname, 'w', encoding='utf8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def smart_match_qas(text):
+    for qa in qas:
+        for sub in qa.get('subcategories', []):
+            for k in sub['keywords']:
+                if k.lower() in text.lower():
+                    reply = sub['reply']
+                    return random.choice(reply) if isinstance(reply, list) else reply
+    log_unmatched_keywords(text)
+    return None
+
+# ============ 日志 ============
+def save_log(uid, text, reply, tag):
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+    fname = f'logs/log_{datetime.date.today()}.csv'
+    with open(fname, 'a', newline='', encoding='utf8') as f:
+        csv.writer(f).writerow([datetime.datetime.now(), uid, text, reply, tag])
+
+# ============ 钩子回复内容 ============
+def get_hook_content_by_persona(persona):
+    if persona == "大客户":
+        return f"尊敬的贵宾，欢迎加入VIP对接群，专属撮合、优先推荐！进群链接：{VIP_GROUP_LINK}"
+    elif persona == "推广号":
+        return f"推广人专属福利群，资源互换、广告合作，欢迎加入主群：{GROUP_LINK}"
+    elif persona == "资源中介":
+        return f"中介资源专属群，供需撮合、信息同步，欢迎加入主群：{GROUP_LINK}"
+    return f"加入资源互助主群，免费对接供需，合作交流：{GROUP_LINK}"
+
+# ============ 消息处理 ============
 @dp.message()
-async def handle_message(message: Message):
+async def handle(message: types.Message):
     text = message.text.strip()
-    username = message.from_user.username or f"id_{message.from_user.id}"
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    uid = str(message.from_user.id)
+    username = message.from_user.username or uid
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    if text.startswith("发布："):
+        try:
+            region, res_type, content, contact = map(str.strip, text.replace("发布：", "").split("+"))
+            tag = classify_tag(content + contact)
+            sheet_resources.append_row([region, res_type, content, contact, tag, now])
+            await message.reply("✅ 资源已提交，管理员审核后将上线。")
+        except:
+            await message.reply("格式错误，正确格式：发布：地区 + 类型 + 内容 + 联系方式")
+        return
+
+    if "举报" in text:
+        sheet_reports.append_row([username, text, classify_tag(text), now, "待审核"])
+        await message.reply("📩 举报信息已记录，我们将尽快处理。")
+        return
+
+    if text.lower() in ['加群', '进群', '入群']:
+        await message.reply(f"🎯 主群地址：{GROUP_LINK}")
+        return
+
+    if text.lower() in ['你是谁', '你叫啥', '你叫什么']:
+        await message.reply("我是资源撮合客服助手，欢迎提问。")
+        return
+
+    # 智能应答库优先
+    ans = smart_match_qas(text)
+    if ans:
+        await message.reply(ans)
+        return
+
+    # AI兜底
+    msgs = user_history.get(uid, [])
+    msgs.append({"role": "user", "content": text})
+    if len(msgs) > 10:
+        msgs = msgs[-10:]
     try:
-        if "我要资源" in text:
-            await message.answer("📦 请进入频道 @YourChannel，查看最新资源")
-            sheet_interactions.append_row([username, text, "资源请求", now])
-        elif "我要发布" in text:
-            await message.answer("📝 请按照格式发送资源内容：地区 + 类型 + 内容 + 联系方式")
-            sheet_interactions.append_row([username, text, "资源发布意图", now])
-        elif "举报" in text:
-            await message.answer("⚠️ 请发送举报对象、理由、截图等内容")
-            sheet_interactions.append_row([username, text, "举报意图", now])
-        else:
-            reply = await ask_gpt(text)
-            await message.answer(reply)
-            sheet_interactions.append_row([username, text, "AI回复", now])
+        reply = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=msgs,
+            temperature=0.7
+        ).choices[0].message.content
     except Exception as e:
-        logging.error(f"[消息处理错误] {e}")
-        await message.answer("处理过程中出现错误，请稍后再试。")
+        reply = f"AI错误：{e}"
 
-# ===== Webhook 启动关闭配置 =====
-async def on_startup(dispatcher: Dispatcher):
-    await bot.set_webhook(f"{WEBHOOK_URL}{WEBHOOK_PATH}", secret_token=WEBHOOK_SECRET)
+    msgs.append({"role": "assistant", "content": reply})
+    user_history[uid] = msgs
+    await message.reply(reply)
+    save_log(uid, text, reply, classify_persona(text))
 
-async def on_shutdown(dispatcher: Dispatcher):
-    await bot.delete_webhook()
+# ============ 启动 ============
+async def main():
+    await dp.start_polling(bot)
 
-# ===== 启动入口 =====
-def create_app():
-    app = web.Application()
-    SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET).register(app, path=WEBHOOK_PATH)
-    setup_application(app, dp, bot=bot)
-    return app
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    app = create_app()
-    web.run_app(app, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
+if __name__ == '__main__':
+    asyncio.run(main())
