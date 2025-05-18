@@ -164,7 +164,35 @@ async def handle(message: types.Message):
 
 # ============ 启动 ============
 async def main():
-    await dp.start_polling(bot)
+    # ===== Webhook 启动方式（用于 Render 云部署）=====
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiohttp import web
+
+# Webhook 配置（请确保这两个变量在环境变量中设好）
+WEBHOOK_PATH = "/webhook"
+WEBHOOK_SECRET = "secret-token"
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://yourproject.onrender.com") + WEBHOOK_PATH
+
+# Webhook 启动时调用
+async def on_startup(dispatcher: Dispatcher):
+    await bot.set_webhook(url=WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
+
+# Webhook 关闭时调用
+async def on_shutdown(dispatcher: Dispatcher):
+    await bot.delete_webhook()
+
+# aiohttp Web 服务器入口函数
+def create_app():
+    app = web.Application()
+    SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET).register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+    return app
+
+# 启动入口（Render自动调用）
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    app = create_app()
+    web.run_app(app, host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
 
 if __name__ == '__main__':
     asyncio.run(main())
