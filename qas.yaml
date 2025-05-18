@@ -1,0 +1,164 @@
+- category: "换汇/资金流"
+  subcategories:
+    - name: "大额换汇"
+      keywords: ["大额换汇", "大额", "批量换汇", "VIP换汇", "bulk exchange", "大笔兑换"]
+      reply:
+        - "💱 大额换汇支持专属汇率与VIP通道，保障资金安全，请私聊币种与金额。"
+        - "如需批量/大额兑换，留言币种金额享受定制服务。"
+    - name: "小额换汇"
+      keywords: ["小额换汇", "零钱兑换", "small exchange", "小金额兑换"]
+      reply:
+        - "小额换汇实时到账，无手续费，支持多币种，欢迎咨询~"
+        - "零钱兑换/零钱转账，灵活方便，操作简单。"
+    - name: "实时汇率/兑换"
+      keywords: ["汇率", "兑换", "currency exchange", "rate", "rate now", "换钱", "remit", "remittance", "forex", "汇价"]
+      reply:
+        - "主流币种实时汇率秒查，支持PHP/CNY/USD/USDT/SGD等，需兑换请留言币种+金额。"
+        - "可提供实时汇率，安全合规，欢迎咨询。"
+
+- category: "收单/出款/支付"
+  subcategories:
+    - name: "收款/收单"
+      keywords: ["收单", "收款", "代收", "collect", "receive payment", "收账", "payment collect"]
+      reply:
+        - "💰 多渠道收款稳定，支持大额/小额，需对接收款请留言或加群。"
+        - "安全收单/代收服务，专人一对一对接。"
+    - name: "出款/放款"
+      keywords: ["出款", "放款", "代付", "payment out", "payout", "payment send"]
+      reply:
+        - "多平台出款通道，到账快捷，大额可谈，需求请私信。"
+        - "有出款需求，欢迎私信，专人服务。"
+    - name: "跨境支付"
+      keywords: ["跨境", "跨境收单", "国际支付", "international payment", "remittance", "overseas", "海外汇款"]
+      reply:
+        - "支持东南亚、菲律宾、新加坡、马来西亚等跨境支付与收款。"
+        - "跨境结算、海外汇兑、国际代收/代付一站对接。"
+    - name: "结算/账单"
+      keywords: ["结算", "账单", "对账", "settle", "reconciliation"]
+      reply:
+        - "结算、账单、对账支持在线处理，有问题请直接联系人工客服。"
+
+- category: "担保/中介/官方保障"
+  subcategories:
+    - name: "担保"
+      keywords: ["担保", "官方担保", "escrow", "平台担保", "交易担保", "资金托管"]
+      reply:
+        - "🛡 本平台支持官方担保交易，全程可查，资金安全保障。"
+        - "需要担保/托管服务，留言或私信人工客服。"
+    - name: "中介/撮合"
+      keywords: ["中介", "撮合", "broker", "intermediary", "第三方"]
+      reply:
+        - "专业撮合/中介服务，供需双方精准一对一对接。"
+        - "可对接各行业中介服务，欢迎咨询发布。"
+    - name: "官方/认证"
+      keywords: ["官方", "认证", "官方认证", "平台认证", "official"]
+      reply:
+        - "平台官方认证，真实可靠，信息安全有保障。"
+        - "官方认证专员为您提供一对一服务。"
+    - name: "安全/风险"
+      keywords: ["安全", "防骗", "风险", "资金安全", "风控", "risk", "secure", "safety"]
+      reply:
+        - "资金安全保障，平台多重风控防护。"
+        - "遇到问题请随时联系真人客服。"
+
+- category: "招聘/求职/兼职"
+  subcategories:
+    - name: "招聘/招人"
+      keywords: ["招聘", "招人", "招工", "hiring", "job opening", "job offer", "人才招聘"]
+      reply:
+        - "每日更新招聘岗位，发布招聘请注明岗位与地区。"
+        - "想发布招聘需求请直接留言或输入“我要发单”。"
+    - name: "兼职/副业"
+      keywords: ["兼职", "part time", "副业", "临时工", "temp job"]
+      reply:
+        - "兼职/副业/临时岗位信息实时推送，欢迎发布。"
+        - "找兼职请留言意向岗位及地区。"
+    - name: "求职/简历"
+      keywords: ["求职", "应聘", "找工作", "resume", "人才", "cv"]
+      reply:
+        - "求职/简历/人才发布免费对接，欢迎留言专业、经验与地区。"
+        - "有简历/人才需求，人工客服一对一推荐。"
+    - name: "内推/推荐"
+      keywords: ["内推", "推荐", "refer", "connection", "推荐名额"]
+      reply:
+        - "内推/推荐岗位资源丰富，欢迎自荐或推荐他人，获取更多内推机会。"
+
+- category: "推广/广告/引流/渠道"
+  subcategories:
+    - name: "推广/广告"
+      keywords: ["推广", "广告", "广告投放", "campaign", "营销", "marketing", "ads"]
+      reply:
+        - "📈 推广/广告/引流资源一站式对接，TG/FB/抖音等全平台覆盖。"
+        - "广告投放合作请留言需求，人工一对一撮合。"
+    - name: "渠道/互推"
+      keywords: ["渠道", "互推", "资源互换", "channel", "合作", "resource swap"]
+      reply:
+        - "渠道/资源互推、合作、分销均可对接，欢迎进群沟通。"
+        - "想要更多行业渠道资源，请留言需求。"
+    - name: "流量/吸粉"
+      keywords: ["流量", "吸粉", "拉新", "流量主", "流量变现"]
+      reply:
+        - "流量主、吸粉达人合作互利，欢迎对接平台资源。"
+        - "需要引流/吸粉资源请直接留言。"
+
+- category: "供需/项目/水单/信息"
+  subcategories:
+    - name: "需求/求购"
+      keywords: ["需求", "need", "求购", "looking for", "want", "需求信息"]
+      reply:
+        - "请描述您的具体需求，平台免费为您撮合对接资源。"
+        - "发布需求，供需群内免费对接，专属人工助理服务。"
+    - name: "供应/出售"
+      keywords: ["供应", "supply", "现货", "available", "出售", "提供", "sell"]
+      reply:
+        - "请描述您的资源供应信息，系统将为您推送意向对接人。"
+        - "有资源供应欢迎留言，平台协助推荐撮合。"
+    - name: "项目/合作"
+      keywords: ["项目", "项目对接", "合作", "cooperation", "opportunity"]
+      reply:
+        - "想对接项目/合作，请简要介绍项目和需求。"
+        - "平台汇集各类优质项目，欢迎对接合作。"
+    - name: "发单/水单"
+      keywords: ["发单", "发布需求", "发布", "水单", "supply info", "post", "订单"]
+      reply:
+        - "📝 发布业务/发单/水单请发送详细内容，或输入“我要发单”获取模板。"
+        - "资源/需求信息实时免费推送，供需撮合更高效。"
+    - name: "接单/报名"
+      keywords: ["接单", "报名", "join", "job apply"]
+      reply:
+        - "接单请留言资源或意向，平台一对一精准推荐。"
+
+- category: "群/频道/圈子/推荐"
+  subcategories:
+    - name: "进群/加群"
+      keywords: ["进群", "加群", "入群", "群链接", "group", "channel", "加入圈子", "邀请"]
+      reply:
+        - "🤝 本群专注资源撮合/供需对接/广告互助。回复“加群”或留言，获取更多圈子推荐。"
+        - "想进更多行业交流群、圈子，请说明意向领域，我来推荐！"
+    - name: "推荐群/频道"
+      keywords: ["推荐群", "推荐频道", "新群", "找群", "recommend group", "行业群", "圈子"]
+      reply:
+        - "根据您的业务/兴趣推荐更多行业群组、圈子，请留言说明需求。"
+        - "频道/群推荐服务免费，行业覆盖广，欢迎咨询。"
+
+- category: "客服/人工/联系方式"
+  subcategories:
+    - name: "客服/人工"
+      keywords: ["客服", "人工客服", "support", "help", "服务", "service"]
+      reply:
+        - "🎀 24小时专属客服，任何问题随时留言，会有真人人工一对一为您服务。"
+        - "人工客服实时响应，请直接留言或私信。"
+    - name: "联系方式"
+      keywords: ["联系方式", "contact", "联系人", "电话", "微信", "telegram", "WhatsApp"]
+      reply:
+        - "如需联系方式请说明您的业务与需求，人工客服会第一时间与您对接。"
+        - "请描述需求，我来为您匹配专属联系人或合作方。"
+
+# 英文多语言示例，可自由扩展
+- category: "Currency Exchange"
+  subcategories:
+    - name: "Exchange"
+      keywords: ["exchange", "remit", "remittance", "rate", "usd to php", "usd2php"]
+      reply:
+        - "💱 For currency exchange and real-time rates, please message us for VIP service."
+        - "Safe and reliable exchange for all major currencies, just let us know your needs."
