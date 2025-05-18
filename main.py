@@ -1,4 +1,4 @@
-# ✅ 合并后的 Telegram AI Bot + 多层引流 + YAML知识库 + Google Sheets 打标签追踪
+# ✅ Webhook + 智能应答 + Google Sheets + YAML应答 + 关键词标准化版本
 
 import asyncio
 from aiogram import Bot, Dispatcher, types
@@ -29,19 +29,17 @@ WEBHOOK_PATH = "/webhook"
 WEBHOOK_SECRET = "secret-token"
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://your-bot-url.onrender.com") + WEBHOOK_PATH
 
-# ============ 初始化对象 ============
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 logging.basicConfig(level=logging.INFO)
 user_history = {}
-welcomed_users = set()
 
-# ============ 加载行业应答库 ============
+# ============ 加载 YAML 问答 ============
 with open('qas.yaml', encoding='utf8') as f:
     qas = yaml.safe_load(f)
 
-# ============ 处理 base64 的 service_account.json ============
+# ============ Google Sheet 授权 ============
 with open("service_account.json", "wb") as f:
     f.write(base64.b64decode(key_base64))
 
@@ -50,7 +48,7 @@ sheet_resources = gc.open(GOOGLE_SHEET_NAME).worksheet("resources")
 sheet_reports = gc.open(GOOGLE_SHEET_NAME).worksheet("reports")
 sheet_interactions = gc.open(GOOGLE_SHEET_NAME).worksheet("interactions")
 
-# ============ 标签识别 ============
+# ============ 分类逻辑 ============
 def classify_persona(text):
     text = text.lower()
     if any(word in text for word in ['老板', '担保', '收单', '大额']):
@@ -72,7 +70,7 @@ def classify_tag(text):
             return tag
     return "其它"
 
-# ============ 智能匹配问答 ============
+# ============ YAML 应答 ============
 def log_unmatched_keywords(text):
     fname = 'unmatched_keywords.json'
     try:
@@ -94,7 +92,7 @@ def smart_match_qas(text):
     log_unmatched_keywords(text)
     return None
 
-# ============ 日志 ============
+# ============ 日志记录 ============
 def save_log(uid, text, reply, tag):
     if not os.path.exists('logs'):
         os.makedirs('logs')
@@ -102,7 +100,6 @@ def save_log(uid, text, reply, tag):
     with open(fname, 'a', newline='', encoding='utf8') as f:
         csv.writer(f).writerow([datetime.datetime.now(), uid, text, reply, tag])
 
-# ============ 钩子回复内容 ============
 def get_hook_content_by_persona(persona):
     if persona == "大客户":
         return f"尊敬的贵宾，欢迎加入VIP对接群，专属撮合、优先推荐！进群链接：{VIP_GROUP_LINK}"
@@ -116,31 +113,42 @@ def get_hook_content_by_persona(persona):
 @dp.message()
 async def handle(message: types.Message):
     text = message.text.strip()
+    text_clean = text.replace("：", ":").replace(" ", "").lower()
     uid = str(message.from_user.id)
     username = message.from_user.username or uid
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    if text.startswith("发布："):
+    if "我要资源" in text_clean:
+        await message.reply("📦 请进入频道 @YourChannel，查看最新资源")
+        sheet_interactions.append_row([username, text, "资源请求", now])
+        return
+
+    if "我要发布" in text_clean:
+        await message.reply("📝 请按照格式发送资源内容：地区 + 类型 + 内容 + 联系方式")
+        sheet_interactions.append_row([username, text, "资源发布意图", now])
+        return
+
+    if "举报" in text_clean:
+        sheet_reports.append_row([username, text, classify_tag(text), now, "待审核"])
+        await message.reply("📩 举报信息已记录，我们将尽快处理。")
+        return
+
+    if text_clean in ['加群', '进群', '入群']:
+        await message.reply(f"🎯 主群地址：{GROUP_LINK}")
+        return
+
+    if text_clean in ['你是谁', '你叫啥', '你叫什么']:
+        await message.reply("我是资源撮合客服助手，欢迎提问。")
+        return
+
+    if text_clean.startswith("发布:"):
         try:
-            region, res_type, content, contact = map(str.strip, text.replace("发布：", "").split("+"))
+            region, res_type, content, contact = map(str.strip, text.replace("发布：", "").replace("发布:", "").split("+"))
             tag = classify_tag(content + contact)
             sheet_resources.append_row([region, res_type, content, contact, tag, now])
             await message.reply("✅ 资源已提交，管理员审核后将上线。")
         except:
             await message.reply("格式错误，正确格式：发布：地区 + 类型 + 内容 + 联系方式")
-        return
-
-    if "举报" in text:
-        sheet_reports.append_row([username, text, classify_tag(text), now, "待审核"])
-        await message.reply("📩 举报信息已记录，我们将尽快处理。")
-        return
-
-    if text.lower() in ['加群', '进群', '入群']:
-        await message.reply(f"🎯 主群地址：{GROUP_LINK}")
-        return
-
-    if text.lower() in ['你是谁', '你叫啥', '你叫什么']:
-        await message.reply("我是资源撮合客服助手，欢迎提问。")
         return
 
     ans = smart_match_qas(text)
@@ -166,7 +174,7 @@ async def handle(message: types.Message):
     await message.reply(reply)
     save_log(uid, text, reply, classify_persona(text))
 
-# ============ Webhook 启动入口 ============
+# ============ Webhook 启动 ============
 async def on_startup(dispatcher: Dispatcher):
     await bot.set_webhook(url=WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
 
