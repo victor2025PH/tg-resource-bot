@@ -1,4 +1,3 @@
-
 import asyncio
 from aiogram import Bot, Dispatcher, types
 import openai
@@ -174,7 +173,29 @@ async def handle(message: types.Message):
     await message.reply(reply)
     save_log(uid, text, reply, classify_persona(text))
 
+# ============ 新增AI自动回复HTTP接口 ============
+
+async def ai_reply(request):
+    try:
+        data = await request.json()
+        prompt = data.get("prompt", "")
+        if not prompt:
+            return web.json_response({"reply": "对不起，未收到问题内容"})
+        # 单轮无上下文
+        try:
+            reply = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            ).choices[0].message.content
+        except Exception as e:
+            reply = f"AI接口异常: {e}"
+        return web.json_response({"reply": reply})
+    except Exception as e:
+        return web.json_response({"reply": f"AI服务器异常: {e}"})
+
 # ============ Webhook 启动 ============
+
 async def on_startup(dispatcher: Dispatcher):
     await bot.set_webhook(url=WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
 
@@ -183,8 +204,15 @@ async def on_shutdown(dispatcher: Dispatcher):
 
 def create_app():
     app = web.Application()
+    # 注册 /webhook 作为 Telegram 机器人 webhook
     SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET).register(app, path=WEBHOOK_PATH)
     setup_application(app, dp, bot=bot)
+    # 新增 /ai_reply 作为AI自动回复API
+    app.router.add_post('/ai_reply', ai_reply)
+    # 可选根目录健康检查
+    async def hello(request):
+        return web.Response(text="tg-resource-bot is running")
+    app.router.add_get('/', hello)
     return app
 
 if __name__ == '__main__':
